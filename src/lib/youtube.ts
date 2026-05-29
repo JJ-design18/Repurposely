@@ -72,19 +72,24 @@ function pickEnglishTrack(tracks: CaptionTrack[]): CaptionTrack {
 
 async function fetchCaptionText(
   track: CaptionTrack,
-  userAgent: string
+  userAgent: string,
+  label: string
 ): Promise<string | null> {
   try {
     const res = await fetch(track.baseUrl, {
       cache: "no-store",
       headers: { "User-Agent": userAgent },
     });
+    console.log(`[${label}] Caption fetch status: ${res.status}`);
     if (!res.ok) return null;
     const xml = await res.text();
+    console.log(`[${label}] Caption XML length: ${xml.length}`);
     if (!xml || xml.length < 10) return null;
     const text = parseCaptionXml(xml);
+    console.log(`[${label}] Parsed text length: ${text.length}`);
     return text.length > 50 ? text : null;
-  } catch {
+  } catch (e) {
+    console.error(`[${label}] Caption fetch error:`, e);
     return null;
   }
 }
@@ -93,7 +98,8 @@ async function fetchViaInnerTube(
   videoId: string,
   clientName: string,
   clientVersion: string,
-  userAgent: string
+  userAgent: string,
+  label: string
 ): Promise<string | null> {
   try {
     const resp = await fetch(INNERTUBE_API_URL, {
@@ -108,20 +114,24 @@ async function fetchViaInnerTube(
         videoId,
       }),
     });
+    console.log(`[${label}] InnerTube status: ${resp.status}`);
     if (!resp.ok) return null;
     const data = await resp.json();
     const tracks: CaptionTrack[] | undefined =
       data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    console.log(`[${label}] Caption tracks found: ${tracks?.length || 0}`);
     if (!Array.isArray(tracks) || tracks.length === 0) return null;
 
     const track = pickEnglishTrack(tracks);
-    return await fetchCaptionText(track, userAgent);
-  } catch {
+    return await fetchCaptionText(track, userAgent, label);
+  } catch (e) {
+    console.error(`[${label}] InnerTube error:`, e);
     return null;
   }
 }
 
 async function fetchViaWebPage(videoId: string): Promise<string | null> {
+  const label = "WEB_SCRAPE";
   try {
     const pageRes = await fetch(
       `https://www.youtube.com/watch?v=${videoId}`,
@@ -134,10 +144,14 @@ async function fetchViaWebPage(videoId: string): Promise<string | null> {
       }
     );
     const html = await pageRes.text();
+    console.log(`[${label}] Page HTML length: ${html.length}`);
 
     const startToken = "var ytInitialPlayerResponse = ";
     const startIndex = html.indexOf(startToken);
-    if (startIndex === -1) return null;
+    if (startIndex === -1) {
+      console.log(`[${label}] No ytInitialPlayerResponse found`);
+      return null;
+    }
 
     const jsonStart = startIndex + startToken.length;
     let depth = 0;
@@ -156,11 +170,13 @@ async function fetchViaWebPage(videoId: string): Promise<string | null> {
     const player = JSON.parse(html.slice(jsonStart, jsonEnd));
     const tracks: CaptionTrack[] | undefined =
       player?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    console.log(`[${label}] Caption tracks found: ${tracks?.length || 0}`);
     if (!Array.isArray(tracks) || tracks.length === 0) return null;
 
     const track = pickEnglishTrack(tracks);
-    return await fetchCaptionText(track, WEB_UA);
-  } catch {
+    return await fetchCaptionText(track, WEB_UA, label);
+  } catch (e) {
+    console.error(`[${label}] Error:`, e);
     return null;
   }
 }
@@ -168,10 +184,12 @@ async function fetchViaWebPage(videoId: string): Promise<string | null> {
 export async function getTranscript(
   videoId: string
 ): Promise<{ text: string; title: string }> {
-  // Try multiple methods in order — first success wins
+  console.log(`[TRANSCRIPT] Starting extraction for video: ${videoId}`);
+
+  // Try all methods - first success wins
   const text =
-    (await fetchViaInnerTube(videoId, "ANDROID", ANDROID_VERSION, ANDROID_UA)) ||
-    (await fetchViaInnerTube(videoId, "IOS", ANDROID_VERSION, IOS_UA)) ||
+    (await fetchViaInnerTube(videoId, "ANDROID", ANDROID_VERSION, ANDROID_UA, "ANDROID")) ||
+    (await fetchViaInnerTube(videoId, "IOS", ANDROID_VERSION, IOS_UA, "IOS")) ||
     (await fetchViaWebPage(videoId));
 
   if (!text) {
@@ -179,6 +197,8 @@ export async function getTranscript(
       "Could not extract transcript. The video may not have captions or may be restricted."
     );
   }
+
+  console.log(`[TRANSCRIPT] Success! Text length: ${text.length}`);
 
   // Fetch title via oEmbed
   let title = "Untitled Video";
