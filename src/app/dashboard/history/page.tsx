@@ -13,6 +13,7 @@ import {
   Mail,
   FileText,
   Quote,
+  Camera,
   ChevronRight,
   Inbox,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import type { GeneratedContent, Project } from "@/types";
 const platformTabs = [
   { id: "twitter", label: "Twitter/X", icon: MessageCircle },
   { id: "tiktok", label: "TikTok", icon: Film },
+  { id: "instagram", label: "Instagram", icon: Camera },
   { id: "linkedin", label: "LinkedIn", icon: Briefcase },
   { id: "newsletter", label: "Newsletter", icon: Mail },
   { id: "blog", label: "Blog", icon: FileText },
@@ -79,8 +81,17 @@ export default function HistoryPage() {
             ))}
           </div>
         );
+      case "instagram":
+        if (!content.instagram?.reels?.length) return <ContentCard title="No Content" content="No Instagram content generated." platform="instagram" />;
+        return (
+          <div className="space-y-3">
+            {content.instagram.reels.map((reel, i) => (
+              <ContentCard key={i} title={`Reel ${i + 1} — Hook`} content={`${reel.hook}\n\n${reel.body}\n\nCTA: ${reel.cta}\n\nCaption: ${reel.caption}`} platform="instagram" />
+            ))}
+          </div>
+        );
       case "linkedin":
-        return <ContentCard title="LinkedIn Post" content={content.linkedin} platform="linkedin" />;
+        return <ContentCard title="LinkedIn Post" content={content.linkedin || "No content generated."} platform="linkedin" />;
       case "newsletter":
         return <ContentCard title="Email Body" content={content.newsletter.body} platform="newsletter" />;
       case "blog":

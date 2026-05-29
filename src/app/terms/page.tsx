@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import { Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Repurposely terms of service — usage rules, content ownership, and account policies.",
+};
 
 export default function TermsPage() {
   return (
@@ -111,7 +117,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Contact">
-            <p>Questions about these terms? Email us at <strong>support@repurposely.com</strong>.</p>
+            <p>Questions about these terms? Email us at <strong>support@repurposely.co</strong>.</p>
           </Section>
         </div>
       </div>

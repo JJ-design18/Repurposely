@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import { Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "Repurposely privacy policy — how we handle your data, content, and personal information.",
+};
 
 export default function PrivacyPage() {
   return (
@@ -88,7 +94,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Contact">
-            <p>Questions about privacy? Email us at <strong>support@repurposely.com</strong>.</p>
+            <p>Questions about privacy? Email us at <strong>support@repurposely.co</strong>.</p>
           </Section>
         </div>
       </div>

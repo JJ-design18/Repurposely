@@ -25,8 +25,21 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Redirect unauthenticated users away from dashboard
+  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    const loginUrl = new URL("/auth/login", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (user && request.nextUrl.pathname.startsWith("/auth/")) {
+    const dashUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashUrl);
+  }
 
   return supabaseResponse;
 }

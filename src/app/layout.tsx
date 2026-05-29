@@ -13,9 +13,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Repurposely — Turn One Video Into a Week of Content",
+  title: {
+    default: "Repurposely — Turn One Video Into a Week of Content",
+    template: "%s | Repurposely",
+  },
   description:
     "Paste your YouTube link, get platform-perfect content for Twitter, TikTok, LinkedIn, newsletters, and blogs in 30 seconds. Built for creators who refuse to waste time.",
+  metadataBase: new URL("https://repurposely.co"),
+  openGraph: {
+    title: "Repurposely — Turn One Video Into a Week of Content",
+    description: "Paste your YouTube link, get platform-perfect content for 7 platforms in 30 seconds.",
+    url: "https://repurposely.co",
+    siteName: "Repurposely",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Repurposely — Turn One Video Into a Week of Content",
+    description: "Paste your YouTube link, get platform-perfect content for 7 platforms in 30 seconds.",
+  },
 };
 
 export default function RootLayout({

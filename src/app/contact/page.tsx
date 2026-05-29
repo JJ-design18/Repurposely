@@ -15,6 +15,10 @@ export default function ContactPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Open mailto with form data
+    const mailtoSubject = encodeURIComponent(`[${subject}] Contact from ${name}`);
+    const mailtoBody = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${message}`);
+    window.open(`mailto:jacobjorgensen17@icloud.com?subject=${mailtoSubject}&body=${mailtoBody}`, "_self");
     setSubmitted(true);
   }
 
@@ -43,7 +47,7 @@ export default function ContactPage() {
               {
                 icon: Mail,
                 title: "Email",
-                desc: "support@repurposely.com",
+                desc: "support@repurposely.co",
               },
               {
                 icon: Clock,
@@ -109,7 +113,7 @@ export default function ContactPage() {
               <div className="relative bg-[#111113] border border-[#1e1e24] rounded-2xl p-7">
                 <div className="absolute top-0 left-7 right-7 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-white mb-1.5">Name</label>
                       <input

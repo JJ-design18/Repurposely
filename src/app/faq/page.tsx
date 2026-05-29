@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import { ArrowRight, Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "FAQ",
+  description: "Frequently asked questions about Repurposely — pricing, platforms, content quality, and more.",
+};
 
 const faqs = [
   {

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PublicNav from "@/components/PublicNav";
 import PublicFooter from "@/components/PublicFooter";
 import { ArrowRight, Target, Heart, Sparkles, Zap } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About",
+  description: "Learn about Repurposely — the AI-powered tool that turns one YouTube video into a week of content for 7 platforms.",
+};
 
 export default function AboutPage() {
   return (
