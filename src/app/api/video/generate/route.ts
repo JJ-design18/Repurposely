@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAI } from "@/lib/openai";
 import { getAuthUser } from "@/lib/auth";
-import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser();

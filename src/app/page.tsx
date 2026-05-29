@@ -31,7 +31,7 @@ const plans = [
     price: "$0",
     period: "forever",
     generations: "3 videos/month",
-    features: ["All 6 platforms", "Copy to clipboard", "Basic support"],
+    features: ["All 7 platforms", "Copy to clipboard", "Basic support"],
     cta: "Start Free",
     highlighted: false,
   },
@@ -41,7 +41,7 @@ const plans = [
     period: "/month",
     generations: "25 videos/month",
     features: [
-      "All 6 platforms",
+      "All 7 platforms",
       "Project history",
       "Edit generated content",
       "Priority support",
@@ -55,7 +55,7 @@ const plans = [
     period: "/month",
     generations: "100 videos/month",
     features: [
-      "All 6 platforms",
+      "All 7 platforms",
       "Project history",
       "Edit generated content",
       "Custom tone/voice",

@@ -21,7 +21,7 @@ const plans = [
     price: "$0",
     period: "forever",
     limit: 3,
-    features: ["3 generations/month", "All 6 platforms", "Basic support"],
+    features: ["3 generations/month", "All 7 platforms", "Basic support"],
   },
   {
     id: "starter",
@@ -279,12 +279,10 @@ export default function SettingsPage() {
         {/* Danger zone */}
         <div className="bg-card border border-danger/20 rounded-2xl p-6">
           <h2 className="font-semibold text-danger mb-3">Danger Zone</h2>
-          <p className="text-sm text-muted mb-4">
-            Permanently delete your account and all associated data. This action cannot be undone.
+          <p className="text-sm text-muted">
+            To delete your account and all associated data, email{" "}
+            <a href="mailto:support@repurposely.co" className="text-primary hover:underline">support@repurposely.co</a>.
           </p>
-          <button className="px-4 py-2 rounded-lg text-sm font-medium border border-danger/30 text-danger hover:bg-danger/10 transition-colors">
-            Delete Account
-          </button>
         </div>
       </div>
     </div>

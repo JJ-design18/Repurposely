@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState(false);
   const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
@@ -25,7 +26,7 @@ export default function SignupPage() {
     }
 
     const supabase = createSupabaseBrowser();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -33,9 +34,34 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
+    } else if (data.session) {
+      // Email confirmation disabled — user is immediately authenticated
       router.push("/dashboard");
+    } else {
+      // Email confirmation required — show message
+      setConfirmEmail(true);
+      setLoading(false);
     }
+  }
+
+  if (confirmEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="w-full max-w-sm text-center">
+          <Link href="/" className="flex items-center justify-center gap-2 mb-8">
+            <Zap className="w-6 h-6 text-primary" />
+            <span className="text-xl font-bold">Repurposely</span>
+          </Link>
+          <h1 className="text-2xl font-bold mb-3">Check your email</h1>
+          <p className="text-muted text-sm mb-6">
+            We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
+          </p>
+          <Link href="/auth/login" className="text-primary hover:underline text-sm">
+            Go to login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

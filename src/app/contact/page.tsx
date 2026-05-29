@@ -18,7 +18,7 @@ export default function ContactPage() {
     // Open mailto with form data
     const mailtoSubject = encodeURIComponent(`[${subject}] Contact from ${name}`);
     const mailtoBody = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${message}`);
-    window.open(`mailto:jacobjorgensen17@icloud.com?subject=${mailtoSubject}&body=${mailtoBody}`, "_self");
+    window.open(`mailto:support@repurposely.co?subject=${mailtoSubject}&body=${mailtoBody}`, "_self");
     setSubmitted(true);
   }
 

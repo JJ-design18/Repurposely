@@ -62,7 +62,7 @@ function parseCaptionXml(xml: string): string {
 async function fetchViaSupadata(videoId: string): Promise<string | null> {
   const apiKey = process.env.SUPADATA_API_KEY;
   if (!apiKey) {
-    console.log("[SUPADATA] No API key configured, skipping");
+
     return null;
   }
 
@@ -74,7 +74,7 @@ async function fetchViaSupadata(videoId: string): Promise<string | null> {
         headers: { "x-api-key": apiKey },
       }
     );
-    console.log(`[SUPADATA] Status: ${res.status}`);
+
     if (!res.ok) return null;
     const data = await res.json();
     const text =
@@ -83,7 +83,7 @@ async function fetchViaSupadata(videoId: string): Promise<string | null> {
         : Array.isArray(data.content)
           ? data.content.map((s: { text: string }) => s.text).join(" ")
           : null;
-    console.log(`[SUPADATA] Text length: ${text?.length || 0}`);
+
     return text && text.length > 50 ? text : null;
   } catch (e) {
     console.error("[SUPADATA] Error:", e);
@@ -151,7 +151,6 @@ async function fetchViaInnerTube(
 export async function getTranscript(
   videoId: string
 ): Promise<{ text: string; title: string }> {
-  console.log(`[TRANSCRIPT] Starting extraction for: ${videoId}`);
 
   // 1. Supadata (works from any server)
   // 2. ANDROID InnerTube (works locally)
@@ -167,7 +166,6 @@ export async function getTranscript(
     );
   }
 
-  console.log(`[TRANSCRIPT] Success! ${text.length} chars`);
 
   // Fetch title
   let title = "Untitled Video";

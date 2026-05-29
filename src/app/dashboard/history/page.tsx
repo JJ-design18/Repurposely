@@ -64,8 +64,10 @@ export default function HistoryPage() {
   }
 
   function renderExpandedContent(content: GeneratedContent) {
+    const noContent = <ContentCard title="No Content" content="No content generated for this platform." platform={activeTab} />;
     switch (activeTab) {
       case "twitter":
+        if (!content.twitter?.posts?.length) return noContent;
         return (
           <div className="space-y-3">
             {content.twitter.posts.map((post, i) => (
@@ -74,6 +76,7 @@ export default function HistoryPage() {
           </div>
         );
       case "tiktok":
+        if (!content.tiktok?.scripts?.length) return noContent;
         return (
           <div className="space-y-3">
             {content.tiktok.scripts.map((script, i) => (
@@ -82,7 +85,7 @@ export default function HistoryPage() {
           </div>
         );
       case "instagram":
-        if (!content.instagram?.reels?.length) return <ContentCard title="No Content" content="No Instagram content generated." platform="instagram" />;
+        if (!content.instagram?.reels?.length) return noContent;
         return (
           <div className="space-y-3">
             {content.instagram.reels.map((reel, i) => (
@@ -90,13 +93,20 @@ export default function HistoryPage() {
             ))}
           </div>
         );
-      case "linkedin":
-        return <ContentCard title="LinkedIn Post" content={content.linkedin || "No content generated."} platform="linkedin" />;
-      case "newsletter":
-        return <ContentCard title="Email Body" content={content.newsletter.body} platform="newsletter" />;
-      case "blog":
-        return <ContentCard title="Blog Intro" content={content.blog.intro} platform="blog" />;
+      case "linkedin": {
+        const text = typeof content.linkedin === "string" ? content.linkedin : JSON.stringify(content.linkedin || "");
+        return <ContentCard title="LinkedIn Post" content={text || "No content generated."} platform="linkedin" />;
+      }
+      case "newsletter": {
+        const body = typeof content.newsletter?.body === "string" ? content.newsletter.body : JSON.stringify(content.newsletter?.body || "");
+        return <ContentCard title="Email Body" content={body || "No content generated."} platform="newsletter" />;
+      }
+      case "blog": {
+        const intro = typeof content.blog?.intro === "string" ? content.blog.intro : JSON.stringify(content.blog?.intro || "");
+        return <ContentCard title="Blog Intro" content={intro || "No content generated."} platform="blog" />;
+      }
       case "quotes":
+        if (!Array.isArray(content.quotes) || !content.quotes.length) return noContent;
         return (
           <div className="space-y-3">
             {content.quotes.map((q, i) => (

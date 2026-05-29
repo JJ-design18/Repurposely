@@ -31,15 +31,21 @@ export async function POST(req: NextRequest) {
   const PLAN_MAP = getPlanMap();
 
   const body = await req.text();
-  const sig = req.headers.get("stripe-signature")!;
+  const sig = req.headers.get("stripe-signature");
+
+  if (!sig) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("STRIPE_WEBHOOK_SECRET is not configured");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });

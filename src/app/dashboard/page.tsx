@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Zap,
   Loader2,
@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [tone, setTone] = useState("casual");
   const [showToneDropdown, setShowToneDropdown] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const toneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
@@ -64,6 +65,17 @@ export default function DashboardPage() {
       if (session?.user) setUserId(session.user.id);
     });
   }, []);
+
+  // Close tone dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (toneRef.current && !toneRef.current.contains(e.target as Node)) {
+        setShowToneDropdown(false);
+      }
+    }
+    if (showToneDropdown) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showToneDropdown]);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -281,7 +293,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tone selector */}
-        <div className="relative">
+        <div className="relative" ref={toneRef}>
           <button
             type="button"
             onClick={() => setShowToneDropdown(!showToneDropdown)}
@@ -336,7 +348,7 @@ export default function DashboardPage() {
           <p className="text-sm text-muted mt-2">
             {step === "transcript"
               ? "Pulling the words from your video."
-              : "Crafting platform-native content for 6 platforms. This takes about 30 seconds."}
+              : "Crafting platform-native content for 7 platforms. This takes about 30 seconds."}
           </p>
           {step === "generating" && (
             <div className="flex justify-center gap-1 mt-4">

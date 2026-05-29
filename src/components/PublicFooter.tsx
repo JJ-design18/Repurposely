@@ -19,7 +19,7 @@ export default function PublicFooter() {
             <h4 className="text-sm font-semibold mb-3">Product</h4>
             <ul className="space-y-2 text-sm text-muted">
               <li><Link href="/#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-              <li><Link href="/dashboard/guide" className="hover:text-foreground transition-colors">Production Guide</Link></li>
+              <li><Link href="/faq" className="hover:text-foreground transition-colors">How It Works</Link></li>
               <li><Link href="/auth/signup" className="hover:text-foreground transition-colors">Get Started</Link></li>
             </ul>
           </div>

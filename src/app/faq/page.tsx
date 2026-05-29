@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "How is this different from ChatGPT?",
-    a: "Speed and quality. We extract the transcript, analyze the full video, and write platform-native content for 6 platforms in one click. No prompting, no copy-pasting, no formatting.",
+    a: "Speed and quality. We extract the transcript, analyze the full video, and write platform-native content for 7 platforms in one click. No prompting, no copy-pasting, no formatting.",
   },
   {
     q: "Does it work with any YouTube video?",
@@ -28,11 +28,11 @@ const faqs = [
   },
   {
     q: "Is there a free plan?",
-    a: "Yes. 3 generations per month, all 6 platforms, no credit card required.",
+    a: "Yes. 3 generations per month, all 7 platforms, no credit card required.",
   },
   {
     q: "What counts as one generation?",
-    a: "One YouTube URL = one generation. Each generation gives you content for all 6 platforms — that's 10+ pieces of content.",
+    a: "One YouTube URL = one generation. Each generation gives you content for all 7 platforms — that's 10+ pieces of content.",
   },
   {
     q: "Can I cancel anytime?",
