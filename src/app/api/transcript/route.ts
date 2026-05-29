@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractVideoId, getTranscript } from "@/lib/youtube";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { url } = await req.json();
