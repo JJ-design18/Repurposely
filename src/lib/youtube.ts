@@ -39,7 +39,7 @@ function decodeEntities(text: string): string {
 function parseCaptionXml(xml: string): string {
   const segments: string[] = [];
 
-  // srv3 format: <p t="ms" d="ms">...<s>word</s>...</p>
+  // srv3 format
   const pRegex = /<p\s+t="\d+"\s+d="\d+"[^>]*>([\s\S]*?)<\/p>/g;
   let match;
   while ((match = pRegex.exec(xml)) !== null) {
@@ -48,7 +48,7 @@ function parseCaptionXml(xml: string): string {
   }
   if (segments.length > 0) return segments.join(" ");
 
-  // Classic format: <text start="s" dur="s">content</text>
+  // Classic format
   const classicRegex = /<text[^>]*>([\s\S]*?)<\/text>/g;
   while ((match = classicRegex.exec(xml)) !== null) {
     const text = decodeEntities(match[1]).replace(/\n/g, " ").trim();
@@ -56,6 +56,42 @@ function parseCaptionXml(xml: string): string {
   }
   return segments.join(" ");
 }
+
+// ── Supadata API (primary — works from any server) ──────────────────
+
+async function fetchViaSupadata(videoId: string): Promise<string | null> {
+  const apiKey = process.env.SUPADATA_API_KEY;
+  if (!apiKey) {
+    console.log("[SUPADATA] No API key configured, skipping");
+    return null;
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&text=true`,
+      {
+        cache: "no-store",
+        headers: { "x-api-key": apiKey },
+      }
+    );
+    console.log(`[SUPADATA] Status: ${res.status}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text =
+      typeof data.content === "string"
+        ? data.content
+        : Array.isArray(data.content)
+          ? data.content.map((s: { text: string }) => s.text).join(" ")
+          : null;
+    console.log(`[SUPADATA] Text length: ${text?.length || 0}`);
+    return text && text.length > 50 ? text : null;
+  } catch (e) {
+    console.error("[SUPADATA] Error:", e);
+    return null;
+  }
+}
+
+// ── InnerTube API (fallback — works locally, blocked on most servers) ──
 
 interface CaptionTrack {
   baseUrl: string;
@@ -70,36 +106,11 @@ function pickEnglishTrack(tracks: CaptionTrack[]): CaptionTrack {
   );
 }
 
-async function fetchCaptionText(
-  track: CaptionTrack,
-  userAgent: string,
-  label: string
-): Promise<string | null> {
-  try {
-    const res = await fetch(track.baseUrl, {
-      cache: "no-store",
-      headers: { "User-Agent": userAgent },
-    });
-    console.log(`[${label}] Caption fetch status: ${res.status}`);
-    if (!res.ok) return null;
-    const xml = await res.text();
-    console.log(`[${label}] Caption XML length: ${xml.length}`);
-    if (!xml || xml.length < 10) return null;
-    const text = parseCaptionXml(xml);
-    console.log(`[${label}] Parsed text length: ${text.length}`);
-    return text.length > 50 ? text : null;
-  } catch (e) {
-    console.error(`[${label}] Caption fetch error:`, e);
-    return null;
-  }
-}
-
 async function fetchViaInnerTube(
   videoId: string,
   clientName: string,
   clientVersion: string,
-  userAgent: string,
-  label: string
+  userAgent: string
 ): Promise<string | null> {
   try {
     const resp = await fetch(INNERTUBE_API_URL, {
@@ -114,93 +125,51 @@ async function fetchViaInnerTube(
         videoId,
       }),
     });
-    console.log(`[${label}] InnerTube status: ${resp.status}`);
     if (!resp.ok) return null;
     const data = await resp.json();
     const tracks: CaptionTrack[] | undefined =
       data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    console.log(`[${label}] Caption tracks found: ${tracks?.length || 0}`);
     if (!Array.isArray(tracks) || tracks.length === 0) return null;
 
     const track = pickEnglishTrack(tracks);
-    return await fetchCaptionText(track, userAgent, label);
-  } catch (e) {
-    console.error(`[${label}] InnerTube error:`, e);
+    const xmlRes = await fetch(track.baseUrl, {
+      cache: "no-store",
+      headers: { "User-Agent": userAgent },
+    });
+    if (!xmlRes.ok) return null;
+    const xml = await xmlRes.text();
+    if (!xml || xml.length < 10) return null;
+    const text = parseCaptionXml(xml);
+    return text.length > 50 ? text : null;
+  } catch {
     return null;
   }
 }
 
-async function fetchViaWebPage(videoId: string): Promise<string | null> {
-  const label = "WEB_SCRAPE";
-  try {
-    const pageRes = await fetch(
-      `https://www.youtube.com/watch?v=${videoId}`,
-      {
-        cache: "no-store",
-        headers: {
-          "User-Agent": WEB_UA,
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      }
-    );
-    const html = await pageRes.text();
-    console.log(`[${label}] Page HTML length: ${html.length}`);
-
-    const startToken = "var ytInitialPlayerResponse = ";
-    const startIndex = html.indexOf(startToken);
-    if (startIndex === -1) {
-      console.log(`[${label}] No ytInitialPlayerResponse found`);
-      return null;
-    }
-
-    const jsonStart = startIndex + startToken.length;
-    let depth = 0;
-    let jsonEnd = jsonStart;
-    for (let i = jsonStart; i < html.length; i++) {
-      if (html[i] === "{") depth++;
-      else if (html[i] === "}") {
-        depth--;
-        if (depth === 0) {
-          jsonEnd = i + 1;
-          break;
-        }
-      }
-    }
-
-    const player = JSON.parse(html.slice(jsonStart, jsonEnd));
-    const tracks: CaptionTrack[] | undefined =
-      player?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    console.log(`[${label}] Caption tracks found: ${tracks?.length || 0}`);
-    if (!Array.isArray(tracks) || tracks.length === 0) return null;
-
-    const track = pickEnglishTrack(tracks);
-    return await fetchCaptionText(track, WEB_UA, label);
-  } catch (e) {
-    console.error(`[${label}] Error:`, e);
-    return null;
-  }
-}
+// ── Main export ─────────────────────────────────────────────────────
 
 export async function getTranscript(
   videoId: string
 ): Promise<{ text: string; title: string }> {
-  console.log(`[TRANSCRIPT] Starting extraction for video: ${videoId}`);
+  console.log(`[TRANSCRIPT] Starting extraction for: ${videoId}`);
 
-  // Try all methods - first success wins
+  // 1. Supadata (works from any server)
+  // 2. ANDROID InnerTube (works locally)
+  // 3. IOS InnerTube (works locally)
   const text =
-    (await fetchViaInnerTube(videoId, "ANDROID", ANDROID_VERSION, ANDROID_UA, "ANDROID")) ||
-    (await fetchViaInnerTube(videoId, "IOS", ANDROID_VERSION, IOS_UA, "IOS")) ||
-    (await fetchViaWebPage(videoId));
+    (await fetchViaSupadata(videoId)) ||
+    (await fetchViaInnerTube(videoId, "ANDROID", ANDROID_VERSION, ANDROID_UA)) ||
+    (await fetchViaInnerTube(videoId, "IOS", ANDROID_VERSION, IOS_UA));
 
   if (!text) {
     throw new Error(
-      "Could not extract transcript. The video may not have captions or may be restricted."
+      "Could not extract transcript. Make sure the video has captions enabled."
     );
   }
 
-  console.log(`[TRANSCRIPT] Success! Text length: ${text.length}`);
+  console.log(`[TRANSCRIPT] Success! ${text.length} chars`);
 
-  // Fetch title via oEmbed
+  // Fetch title
   let title = "Untitled Video";
   try {
     const res = await fetch(
