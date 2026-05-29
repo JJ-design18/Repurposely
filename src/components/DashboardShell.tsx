@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -14,7 +14,11 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-const supabase = createSupabaseBrowser();
+let supabaseInstance: ReturnType<typeof createSupabaseBrowser> | null = null;
+function getSupabase() {
+  if (!supabaseInstance) supabaseInstance = createSupabaseBrowser();
+  return supabaseInstance;
+}
 
 export default function DashboardShell({
   children,
@@ -25,8 +29,12 @@ export default function DashboardShell({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const checkedRef = useRef(false);
 
   useEffect(() => {
+    if (checkedRef.current) return;
+    checkedRef.current = true;
+    const supabase = getSupabase();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push("/auth/login");
@@ -40,28 +48,14 @@ export default function DashboardShell({
   }, [router]);
 
   async function handleLogout() {
+    const supabase = getSupabase();
     await supabase.auth.signOut();
     router.push("/");
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <Zap className="absolute inset-0 m-auto w-5 h-5 text-primary" />
-          </div>
-          <p className="text-sm text-muted">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
+      {/* Sidebar — always visible */}
       <aside className="w-64 bg-card/50 border-r border-border flex flex-col shrink-0 h-screen sticky top-0">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2 group">
@@ -112,10 +106,10 @@ export default function DashboardShell({
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-              {user?.email?.charAt(0).toUpperCase()}
+              {user?.email?.charAt(0).toUpperCase() || "?"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">{user?.email}</p>
+              <p className="text-xs font-medium truncate">{user?.email || "Loading..."}</p>
               <p className="text-[10px] text-muted">Free Plan</p>
             </div>
           </div>
@@ -130,7 +124,22 @@ export default function DashboardShell({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto bg-background">{children}</main>
+      <main className="flex-1 overflow-auto bg-background">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center h-screen">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-12 h-12">
+                <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <Zap className="absolute inset-0 m-auto w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm text-muted">Loading dashboard...</p>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
+      </main>
     </div>
   );
 }
