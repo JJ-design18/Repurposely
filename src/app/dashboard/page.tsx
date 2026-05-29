@@ -96,6 +96,7 @@ export default function DashboardPage() {
           transcript: transcriptData.transcript,
           title: transcriptData.title,
           tone,
+          youtubeUrl: url,
         }),
       });
 
@@ -106,31 +107,6 @@ export default function DashboardPage() {
 
       setContent(generateData.content);
       setStep("done");
-
-      // Save to database
-      if (userId) {
-        const supabase = createSupabaseBrowser();
-        await supabase.from("projects").insert({
-          user_id: userId,
-          youtube_url: url,
-          video_title: transcriptData.title,
-          transcript: transcriptData.transcript.slice(0, 10000),
-          generated_content: generateData.content,
-          status: "completed",
-        });
-        // Increment usage count
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("generations_used")
-          .eq("id", userId)
-          .single();
-        if (profile) {
-          await supabase
-            .from("profiles")
-            .update({ generations_used: profile.generations_used + 1 })
-            .eq("id", userId);
-        }
-      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg === "The user aborted a request." ? "Request timed out. Try a shorter video." : msg);

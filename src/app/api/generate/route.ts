@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAI } from "@/lib/openai";
 import { buildPromptBatch1, buildPromptBatch2, buildPromptBatch3 } from "@/lib/prompts";
+import { getAuthUser } from "@/lib/auth";
+import { createSupabaseServer } from "@/lib/supabase-server";
+import { PLAN_LIMITS } from "@/types";
 import type { GeneratedContent } from "@/types";
 
 function repairJSON(raw: string): string {
@@ -28,8 +31,14 @@ const SYSTEM_MSG =
   "You are a content creator. Output ONLY valid JSON. No markdown. No code fences. Complete ALL sections. NEVER use: unlock, leverage, dive in, game-changer, embark, delve, explore, journey, elevate, harness, navigate, landscape, utilize, comprehensive. Write like a real human. Contractions always. Short sentences.";
 
 export async function POST(req: NextRequest) {
+  // Auth check
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { transcript, title, tone } = await req.json();
+    const { transcript, title, tone, youtubeUrl } = await req.json();
 
     if (!transcript || !title) {
       return NextResponse.json(
@@ -38,16 +47,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Enforce generation limits
+    const supabase = await createSupabaseServer();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan, generations_used")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    const limit = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.free;
+    if (profile.generations_used >= limit) {
+      return NextResponse.json(
+        { error: `You've reached your ${profile.plan} plan limit of ${limit} generations/month. Upgrade for more.` },
+        { status: 403 }
+      );
+    }
+
+    // Cap transcript size
+    const safeTranscript = transcript.slice(0, 50000);
+
     const openai = getOpenAI();
     const t = tone || "casual";
 
-    // 3 parallel API calls — each focused on fewer platforms = no truncation
     const [result1, result2, result3] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_MSG },
-          { role: "user", content: buildPromptBatch1(transcript, title, t) },
+          { role: "user", content: buildPromptBatch1(safeTranscript, title, t) },
         ],
         temperature: 0.8,
         max_tokens: 8000,
@@ -57,7 +88,7 @@ export async function POST(req: NextRequest) {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_MSG },
-          { role: "user", content: buildPromptBatch2(transcript, title, t) },
+          { role: "user", content: buildPromptBatch2(safeTranscript, title, t) },
         ],
         temperature: 0.8,
         max_tokens: 4000,
@@ -67,7 +98,7 @@ export async function POST(req: NextRequest) {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_MSG },
-          { role: "user", content: buildPromptBatch3(transcript, title, t) },
+          { role: "user", content: buildPromptBatch3(safeTranscript, title, t) },
         ],
         temperature: 0.8,
         max_tokens: 4000,
@@ -100,12 +131,28 @@ export async function POST(req: NextRequest) {
       quotes: batch3.quotes as string[],
     };
 
+    // Save to history server-side
+    await supabase.from("projects").insert({
+      user_id: user.id,
+      youtube_url: youtubeUrl || "",
+      video_title: title,
+      transcript: safeTranscript.slice(0, 10000),
+      generated_content: content,
+      status: "completed",
+    });
+
+    // Atomic-ish usage increment (server-side, not client)
+    await supabase
+      .from("profiles")
+      .update({ generations_used: profile.generations_used + 1 })
+      .eq("id", user.id);
+
     return NextResponse.json({ content });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error("Generation error:", errMsg);
     return NextResponse.json(
-      { error: `Failed to generate content: ${errMsg}` },
+      { error: "Failed to generate content. Please try again." },
       { status: 500 }
     );
   }

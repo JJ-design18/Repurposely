@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractVideoId, getTranscript } from "@/lib/youtube";
+import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { url } = await req.json();
 

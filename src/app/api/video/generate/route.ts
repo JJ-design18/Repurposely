@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAI } from "@/lib/openai";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { getAuthUser } from "@/lib/auth";
 import crypto from "crypto";
 
-const VIDEOS_DIR = path.join(process.cwd(), "public", "videos");
-
 export async function POST(req: NextRequest) {
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { hook, body, cta, visualNotes } = await req.json();
 
@@ -18,11 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!existsSync(VIDEOS_DIR)) {
-      await mkdir(VIDEOS_DIR, { recursive: true });
-    }
-
-    const id = crypto.randomUUID().slice(0, 8);
     const openai = getOpenAI();
 
     // Step 1: Expand into a natural-sounding voiceover script
@@ -78,10 +74,9 @@ OUTPUT: ONLY the spoken words. No labels. No directions. 140-180 words.`,
       speed: 1.05,
     });
 
-    const audioFilename = `voiceover_${id}.mp3`;
-    const audioPath = path.join(VIDEOS_DIR, audioFilename);
     const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
-    await writeFile(audioPath, audioBuffer);
+    const audioBase64 = audioBuffer.toString("base64");
+    const audioDataUrl = `data:audio/mpeg;base64,${audioBase64}`;
 
     // Step 3: Generate scene-by-scene storyboard with B-roll directions
     const storyboardResponse = await openai.chat.completions.create({
@@ -136,7 +131,7 @@ Return JSON:
 
     return NextResponse.json({
       voiceoverScript,
-      audioUrl: `/videos/${audioFilename}`,
+      audioUrl: audioDataUrl,
       storyboard,
     });
   } catch (error: unknown) {

@@ -91,18 +91,10 @@ export default function SettingsPage() {
   async function handleUpgrade(priceId: string, planId: string) {
     setCheckoutLoading(planId);
     try {
-      const supabase = createSupabaseBrowser();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId,
-          userId: session.user.id,
-          email: session.user.email,
-        }),
+        body: JSON.stringify({ priceId }),
       });
 
       const data = await res.json();

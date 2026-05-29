@@ -13,15 +13,22 @@ function getSupabaseAdmin() {
   );
 }
 
-const PLAN_MAP: Record<string, string> = {
-  "price_1TcESUI0RZLTGgozIUujwRus": "starter",
-  "price_1TcEURI0RZLTGgoz3fRJnyiY": "pro",
-  "price_1TcEUtI0RZLTGgozQ1lWIAqW": "agency",
-};
+// Build price-to-plan map from env vars (live price IDs)
+function getPlanMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+  const starter = process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID;
+  const pro = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+  const agency = process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID;
+  if (starter) map[starter] = "starter";
+  if (pro) map[pro] = "pro";
+  if (agency) map[agency] = "agency";
+  return map;
+}
 
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
   const supabase = getSupabaseAdmin();
+  const PLAN_MAP = getPlanMap();
 
   const body = await req.text();
   const sig = req.headers.get("stripe-signature")!;
@@ -49,41 +56,58 @@ export async function POST(req: NextRequest) {
         const subscription =
           await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = subscription.items.data[0]?.price.id;
-        const plan = PLAN_MAP[priceId] || "starter";
+        const plan = PLAN_MAP[priceId] || "free";
 
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({
             plan,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
+            generations_used: 0,
           })
           .eq("id", userId);
+
+        if (error) {
+          console.error("Supabase update failed (checkout):", error);
+          return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+        }
       }
       break;
     }
 
+    case "customer.subscription.created":
     case "customer.subscription.updated": {
       const subscription = event.data.object as Stripe.Subscription;
       const priceId = subscription.items.data[0]?.price.id;
-      const plan = PLAN_MAP[priceId] || "starter";
+      const plan = PLAN_MAP[priceId] || "free";
 
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({ plan })
         .eq("stripe_subscription_id", subscription.id);
+
+      if (error) {
+        console.error("Supabase update failed (sub update):", error);
+        return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      }
       break;
     }
 
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription;
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({
           plan: "free",
           stripe_subscription_id: null,
         })
         .eq("stripe_subscription_id", subscription.id);
+
+      if (error) {
+        console.error("Supabase update failed (sub delete):", error);
+        return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      }
       break;
     }
   }
