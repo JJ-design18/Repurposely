@@ -14,6 +14,8 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
+const supabase = createSupabaseBrowser();
+
 export default function DashboardShell({
   children,
 }: {
@@ -23,10 +25,8 @@ export default function DashboardShell({
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createSupabaseBrowser();
 
   useEffect(() => {
-    // Use getSession for fast local check, then getUser for verification
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push("/auth/login");
@@ -37,7 +37,7 @@ export default function DashboardShell({
     }).catch(() => {
       router.push("/auth/login");
     });
-  }, [router, supabase.auth]);
+  }, [router]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -62,7 +62,7 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-card/50 border-r border-border flex flex-col shrink-0">
+      <aside className="w-64 bg-card/50 border-r border-border flex flex-col shrink-0 h-screen sticky top-0">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
