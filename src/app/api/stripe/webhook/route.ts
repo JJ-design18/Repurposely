@@ -14,10 +14,9 @@ function getSupabaseAdmin() {
 }
 
 const PLAN_MAP: Record<string, string> = {
-  // Map your Stripe price IDs to plan names
-  // price_starter_monthly: 'starter',
-  // price_pro_monthly: 'pro',
-  // price_agency_monthly: 'agency',
+  "price_1TcESUI0RZLTGgozIUujwRus": "starter",
+  "price_1TcEURI0RZLTGgoz3fRJnyiY": "pro",
+  "price_1TcEUtI0RZLTGgozQ1lWIAqW": "agency",
 };
 
 export async function POST(req: NextRequest) {

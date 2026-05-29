@@ -29,7 +29,8 @@ const plans = [
     price: "$19",
     period: "/month",
     limit: 25,
-    features: ["25 generations/month", "All 6 platforms", "Generation history", "Priority support"],
+    priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || "",
+    features: ["25 generations/month", "All 7 platforms", "Generation history", "Priority support"],
   },
   {
     id: "pro",
@@ -37,7 +38,8 @@ const plans = [
     price: "$39",
     period: "/month",
     limit: 100,
-    features: ["100 generations/month", "All 6 platforms", "Custom tone/voice", "Generation history", "API access"],
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || "",
+    features: ["100 generations/month", "All 7 platforms", "Custom tone/voice", "Production Kit", "Generation history", "API access"],
     popular: true,
   },
   {
@@ -46,6 +48,7 @@ const plans = [
     price: "$79",
     period: "/month",
     limit: 500,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID || "",
     features: ["500 generations/month", "Everything in Pro", "Team access (5 seats)", "Bulk generation", "Dedicated support"],
   },
 ];
@@ -54,6 +57,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState("");
 
   useEffect(() => {
     loadProfile();
@@ -82,6 +86,36 @@ export default function SettingsPage() {
     await supabase.auth.resetPasswordForEmail(session.user.email);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  }
+
+  async function handleUpgrade(priceId: string, planId: string) {
+    setCheckoutLoading(planId);
+    try {
+      const supabase = createSupabaseBrowser();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId,
+          userId: session.user.id,
+          email: session.user.email,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to start checkout");
+      }
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setCheckoutLoading("");
+    }
   }
 
   if (loading) {
@@ -213,9 +247,13 @@ export default function SettingsPage() {
                       </li>
                     ))}
                   </ul>
-                  {!isCurrent && (
-                    <button className="w-full mt-4 py-2 rounded-lg text-xs font-semibold transition-all bg-primary/10 text-primary hover:bg-primary hover:text-white">
-                      {plan.id === "free" ? "Downgrade" : "Upgrade"}
+                  {!isCurrent && plan.id !== "free" && (
+                    <button
+                      onClick={() => handleUpgrade(plan.priceId || "", plan.id)}
+                      disabled={checkoutLoading === plan.id}
+                      className="w-full mt-4 py-2 rounded-lg text-xs font-semibold transition-all bg-primary/10 text-primary hover:bg-primary hover:text-white disabled:opacity-50"
+                    >
+                      {checkoutLoading === plan.id ? "Loading..." : "Upgrade"}
                     </button>
                   )}
                 </div>
