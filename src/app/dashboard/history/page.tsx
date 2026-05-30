@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { canViewHistory } from "@/lib/plans";
 import {
   History,
   ExternalLink,
@@ -35,6 +36,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("twitter");
+  const [userPlan, setUserPlan] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -45,6 +47,19 @@ export default function HistoryPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
     const user = session.user;
+
+    // Check plan
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+    setUserPlan(profile?.plan || "free");
+
+    if (!canViewHistory(profile?.plan || "free")) {
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("projects")
@@ -139,6 +154,27 @@ export default function HistoryPage() {
       <div className="p-8 max-w-4xl mx-auto">
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (userPlan && !canViewHistory(userPlan)) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <History className="w-5 h-5 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold">Generation History</h1>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+          <History className="w-12 h-12 text-muted mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">History is a Starter feature</h3>
+          <p className="text-muted text-sm mb-6">Upgrade to Starter to save and revisit all your past generations.</p>
+          <a href="/dashboard/settings" className="inline-block bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-hover transition-colors">
+            Upgrade to Starter
+          </a>
         </div>
       </div>
     );

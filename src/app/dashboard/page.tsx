@@ -18,6 +18,7 @@ import {
 import ContentCard from "@/components/ContentCard";
 import VideoGenerator from "@/components/VideoGenerator";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { canUseTones, canUseProductionKit } from "@/lib/plans";
 import type { GeneratedContent } from "@/types";
 
 const tabs = [
@@ -57,12 +58,23 @@ export default function DashboardPage() {
   const [tone, setTone] = useState("casual");
   const [showToneDropdown, setShowToneDropdown] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState("free");
   const toneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setUserId(session.user.id);
+      if (session?.user) {
+        setUserId(session.user.id);
+        supabase
+          .from("profiles")
+          .select("plan")
+          .eq("id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.plan) setUserPlan(data.plan);
+          });
+      }
     });
   }, []);
 
@@ -171,13 +183,21 @@ export default function DashboardPage() {
                 {script.body && <ContentCard title="Body" content={script.body} platform="tiktok" />}
                 {script.cta && <ContentCard title="Call to Action" content={script.cta} platform="tiktok" />}
                 {script.visualNotes && <ContentCard title="Visual Notes" content={script.visualNotes} platform="tiktok" />}
-                <VideoGenerator
-                  hook={script.hook || ""}
-                  body={script.body || ""}
-                  cta={script.cta || ""}
-                  visualNotes={script.visualNotes || ""}
-                  scriptIndex={i + 1}
-                />
+                {canUseProductionKit(userPlan) ? (
+                  <VideoGenerator
+                    hook={script.hook || ""}
+                    body={script.body || ""}
+                    cta={script.cta || ""}
+                    visualNotes={script.visualNotes || ""}
+                    scriptIndex={i + 1}
+                  />
+                ) : (
+                  <div className="bg-card/30 border border-border rounded-xl p-4 text-center">
+                    <p className="text-sm font-medium mb-1">Production Kit</p>
+                    <p className="text-xs text-muted mb-2">AI voiceover + storyboard. Available on Pro plan.</p>
+                    <a href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -197,13 +217,21 @@ export default function DashboardPage() {
                 {reel.body && <ContentCard title="Body" content={reel.body} platform="instagram" />}
                 {reel.cta && <ContentCard title="Call to Action" content={reel.cta} platform="instagram" />}
                 {reel.caption && <ContentCard title="Instagram Caption" content={reel.caption} platform="instagram" />}
-                <VideoGenerator
-                  hook={reel.hook || ""}
-                  body={reel.body || ""}
-                  cta={reel.cta || ""}
-                  visualNotes=""
-                  scriptIndex={i + 1}
-                />
+                {canUseProductionKit(userPlan) ? (
+                  <VideoGenerator
+                    hook={reel.hook || ""}
+                    body={reel.body || ""}
+                    cta={reel.cta || ""}
+                    visualNotes=""
+                    scriptIndex={i + 1}
+                  />
+                ) : (
+                  <div className="bg-card/30 border border-border rounded-xl p-4 text-center">
+                    <p className="text-sm font-medium mb-1">Production Kit</p>
+                    <p className="text-xs text-muted mb-2">AI voiceover + storyboard. Available on Pro plan.</p>
+                    <a href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -294,30 +322,52 @@ export default function DashboardPage() {
 
         {/* Tone selector */}
         <div className="relative" ref={toneRef}>
-          <button
-            type="button"
-            onClick={() => setShowToneDropdown(!showToneDropdown)}
-            className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Tone: <span className="text-foreground font-medium">{tones.find(t => t.id === tone)?.label}</span>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showToneDropdown ? "rotate-180" : ""}`} />
-          </button>
+          {canUseTones(userPlan) ? (
+            <button
+              type="button"
+              onClick={() => setShowToneDropdown(!showToneDropdown)}
+              className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Tone: <span className="text-foreground font-medium">{tones.find(t => t.id === tone)?.label}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showToneDropdown ? "rotate-180" : ""}`} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowToneDropdown(!showToneDropdown)}
+              className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Tone: <span className="text-foreground font-medium">Casual</span>
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-medium ml-1">Starter+</span>
+            </button>
+          )}
           {showToneDropdown && (
             <div className="absolute top-full left-0 mt-2 bg-card border border-border rounded-xl p-2 shadow-xl z-10 w-72">
-              {tones.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => { setTone(t.id); setShowToneDropdown(false); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                    tone === t.id ? "bg-primary/10 text-primary" : "hover:bg-card-hover"
-                  }`}
-                >
-                  <div className="font-medium">{t.label}</div>
-                  <div className="text-xs text-muted">{t.desc}</div>
-                </button>
-              ))}
+              {canUseTones(userPlan) ? (
+                tones.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => { setTone(t.id); setShowToneDropdown(false); }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      tone === t.id ? "bg-primary/10 text-primary" : "hover:bg-card-hover"
+                    }`}
+                  >
+                    <div className="font-medium">{t.label}</div>
+                    <div className="text-xs text-muted">{t.desc}</div>
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-4 text-center">
+                  <p className="text-sm font-medium mb-1">Unlock Custom Tones</p>
+                  <p className="text-xs text-muted mb-3">Upgrade to Starter to choose from 5 content tones.</p>
+                  <a href="/dashboard/settings" className="inline-block bg-primary text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors">
+                    Upgrade
+                  </a>
+                </div>
+              )}
             </div>
           )}
         </div>
