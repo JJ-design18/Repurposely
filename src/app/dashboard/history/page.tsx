@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { canViewHistory } from "@/lib/plans";
 import {
@@ -95,7 +96,7 @@ export default function HistoryPage() {
         return (
           <div className="space-y-3">
             {content.tiktok.scripts.map((script, i) => (
-              <ContentCard key={i} title={`Script ${i + 1} — Hook`} content={script.hook} platform="tiktok" />
+              <ContentCard key={i} title={`Script ${i + 1} — Hook`} content={script.hook || "No hook generated."} platform="tiktok" />
             ))}
           </div>
         );
@@ -104,7 +105,7 @@ export default function HistoryPage() {
         return (
           <div className="space-y-3">
             {content.instagram.reels.map((reel, i) => (
-              <ContentCard key={i} title={`Reel ${i + 1} — Hook`} content={`${reel.hook}\n\n${reel.body}\n\nCTA: ${reel.cta}\n\nCaption: ${reel.caption}`} platform="instagram" />
+              <ContentCard key={i} title={`Reel ${i + 1} — Hook`} content={`${reel.hook || ""}\n\n${reel.body || ""}\n\nCTA: ${reel.cta || ""}\n\nCaption: ${reel.caption || ""}`} platform="instagram" />
             ))}
           </div>
         );
@@ -172,9 +173,9 @@ export default function HistoryPage() {
           <History className="w-12 h-12 text-muted mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">History is a Starter feature</h3>
           <p className="text-muted text-sm mb-6">Upgrade to Starter to save and revisit all your past generations.</p>
-          <a href="/dashboard/settings" className="inline-block bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-hover transition-colors">
+          <Link href="/dashboard/settings" className="inline-block bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-hover transition-colors">
             Upgrade to Starter
-          </a>
+          </Link>
         </div>
       </div>
     );

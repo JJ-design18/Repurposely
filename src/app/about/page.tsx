@@ -88,7 +88,7 @@ export default function AboutPage() {
           <h2 className="text-xl font-bold text-center mb-8">By the Numbers</h2>
           <div className="grid grid-cols-3 gap-6 text-center">
             {[
-              { number: "6", label: "Platforms per generation" },
+              { number: "7", label: "Platforms per generation" },
               { number: "30s", label: "Average generation time" },
               { number: "10+", label: "Content pieces per video" },
             ].map((stat) => (

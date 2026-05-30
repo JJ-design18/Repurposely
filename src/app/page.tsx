@@ -173,7 +173,7 @@ export default function Home() {
               {
                 step: "2",
                 title: "AI does the work",
-                desc: "Our AI analyzes your content and generates platform-native posts for 6 different channels.",
+                desc: "Our AI analyzes your content and generates platform-native posts for 7 different channels.",
               },
               {
                 step: "3",

@@ -88,12 +88,27 @@ export default function VideoGenerator({
     }
   }
 
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  }
+
   async function copyScript() {
     if (!result) return;
-    await navigator.clipboard.writeText(result.voiceoverScript);
+    await copyToClipboard(result.voiceoverScript);
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2000);
   }
+
+  const [copiedCaptions, setCopiedCaptions] = useState(false);
 
   async function copyCaptions() {
     if (!result?.storyboard?.scenes) return;
@@ -101,7 +116,9 @@ export default function VideoGenerator({
       .map((s) => s.textOverlay)
       .filter(Boolean)
       .join("\n");
-    await navigator.clipboard.writeText(captions);
+    await copyToClipboard(captions);
+    setCopiedCaptions(true);
+    setTimeout(() => setCopiedCaptions(false), 2000);
   }
 
   if (!result && !loading) {
@@ -199,10 +216,14 @@ export default function VideoGenerator({
           </button>
           <button
             onClick={copyCaptions}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-card border border-border hover:bg-card-hover transition-colors"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+              copiedCaptions
+                ? "bg-success/10 border-success/30 text-success"
+                : "bg-card border-border hover:bg-card-hover"
+            }`}
           >
-            <Type className="w-4 h-4" />
-            Copy Caption Text
+            {copiedCaptions ? <Check className="w-4 h-4" /> : <Type className="w-4 h-4" />}
+            {copiedCaptions ? "Copied!" : "Copy Caption Text"}
           </button>
         </div>
       </div>

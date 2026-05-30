@@ -117,7 +117,7 @@ export default function DashboardShell({
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-xs font-semibold">Upgrade to Pro</span>
             </div>
-            <p className="text-xs text-muted mb-3">Get 100 generations/month and custom voice matching.</p>
+            <p className="text-xs text-muted mb-3">Premium AI, Production Kit, and 100 generations/month.</p>
             <Link
               href="/dashboard/settings"
               className="block w-full text-center py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary-hover transition-colors"

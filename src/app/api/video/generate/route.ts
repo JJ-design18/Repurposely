@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenAI } from "@/lib/openai";
 import { getAuthUser } from "@/lib/auth";
+import { canUseProductionKit } from "@/lib/plans";
+import { createSupabaseServer } from "@/lib/supabase-server";
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Enforce Pro+ plan requirement
+  const supabase = await createSupabaseServer();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !canUseProductionKit(profile.plan)) {
+    return NextResponse.json(
+      { error: "Production Kit requires a Pro plan or higher. Upgrade in Settings." },
+      { status: 403 }
+    );
   }
 
   try {
@@ -137,7 +156,7 @@ Return JSON:
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error("Production kit error:", errMsg);
     return NextResponse.json(
-      { error: `Production kit failed: ${errMsg}` },
+      { error: "Production kit failed. Please try again." },
       { status: 500 }
     );
   }

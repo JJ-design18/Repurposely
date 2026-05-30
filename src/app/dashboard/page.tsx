@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Camera,
 } from "lucide-react";
+import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
 import VideoGenerator from "@/components/VideoGenerator";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -195,7 +196,7 @@ export default function DashboardPage() {
                   <div className="bg-card/30 border border-border rounded-xl p-4 text-center">
                     <p className="text-sm font-medium mb-1">Production Kit</p>
                     <p className="text-xs text-muted mb-2">AI voiceover + storyboard. Available on Pro plan.</p>
-                    <a href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</a>
+                    <Link href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</Link>
                   </div>
                 )}
               </div>
@@ -229,7 +230,7 @@ export default function DashboardPage() {
                   <div className="bg-card/30 border border-border rounded-xl p-4 text-center">
                     <p className="text-sm font-medium mb-1">Production Kit</p>
                     <p className="text-xs text-muted mb-2">AI voiceover + storyboard. Available on Pro plan.</p>
-                    <a href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</a>
+                    <Link href="/dashboard/settings" className="text-xs text-primary hover:underline font-medium">Upgrade to Pro</Link>
                   </div>
                 )}
               </div>
@@ -363,9 +364,9 @@ export default function DashboardPage() {
                 <div className="px-3 py-4 text-center">
                   <p className="text-sm font-medium mb-1">Unlock Custom Tones</p>
                   <p className="text-xs text-muted mb-3">Upgrade to Starter to choose from 5 content tones.</p>
-                  <a href="/dashboard/settings" className="inline-block bg-primary text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors">
+                  <Link href="/dashboard/settings" className="inline-block bg-primary text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors">
                     Upgrade
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

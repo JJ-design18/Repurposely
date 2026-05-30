@@ -3,9 +3,11 @@ import { getOpenAI } from "@/lib/openai";
 import { buildPromptBatch1, buildPromptBatch2, buildPromptBatch3 } from "@/lib/prompts";
 import { getAuthUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { hasFeature } from "@/lib/plans";
+import { hasFeature, canUseTones } from "@/lib/plans";
 import { PLAN_LIMITS } from "@/types";
 import type { GeneratedContent } from "@/types";
+
+export const maxDuration = 60;
 
 function repairJSON(raw: string): string {
   let s = raw.trim();
@@ -72,7 +74,8 @@ export async function POST(req: NextRequest) {
     const safeTranscript = transcript.slice(0, 50000);
 
     const openai = getOpenAI();
-    const t = tone || "casual";
+    // Enforce tone gating server-side — free users get casual only
+    const t = canUseTones(profile.plan) ? (tone || "casual") : "casual";
 
     // Pro/Agency get gpt-4o (better quality), Free/Starter get gpt-4o-mini
     const model = hasFeature(profile.plan, "pro") ? "gpt-4o" : "gpt-4o-mini";

@@ -62,7 +62,6 @@ export interface UserProfile {
   email: string;
   plan: "free" | "starter" | "pro" | "agency";
   generations_used: number;
-  generations_limit: number;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   created_at: string;
