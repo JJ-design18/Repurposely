@@ -21,7 +21,7 @@ const plans = [
     price: "$0",
     period: "forever",
     limit: 3,
-    features: ["3 generations/month", "All 7 platforms", "Casual tone only", "Basic support"],
+    features: ["3 generations/month", "All 7 platforms", "Standard AI quality", "Casual tone only"],
   },
   {
     id: "starter",
@@ -30,7 +30,7 @@ const plans = [
     period: "/month",
     limit: 25,
     priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || "",
-    features: ["25 generations/month", "All 7 platforms", "5 custom tones", "Generation history", "Priority support"],
+    features: ["25 generations/month", "All 7 platforms", "Standard AI quality", "5 custom tones", "Generation history", "Priority support"],
   },
   {
     id: "pro",
@@ -39,7 +39,7 @@ const plans = [
     period: "/month",
     limit: 100,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || "",
-    features: ["100 generations/month", "All 7 platforms", "5 custom tones", "Generation history", "Production Kit (voiceover + storyboard)", "Priority support"],
+    features: ["100 generations/month", "All 7 platforms", "Premium AI quality (GPT-4o)", "5 custom tones", "Generation history", "Production Kit (voiceover + storyboard)", "Priority support"],
     popular: true,
   },
   {
@@ -49,7 +49,7 @@ const plans = [
     period: "/month",
     limit: 500,
     priceId: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID || "",
-    features: ["500 generations/month", "Everything in Pro", "Dedicated support"],
+    features: ["500 generations/month", "Everything in Pro", "Premium AI quality (GPT-4o)", "Dedicated support"],
   },
 ];
 

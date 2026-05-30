@@ -3,6 +3,7 @@ import { getOpenAI } from "@/lib/openai";
 import { buildPromptBatch1, buildPromptBatch2, buildPromptBatch3 } from "@/lib/prompts";
 import { getAuthUser } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { hasFeature } from "@/lib/plans";
 import { PLAN_LIMITS } from "@/types";
 import type { GeneratedContent } from "@/types";
 
@@ -73,9 +74,12 @@ export async function POST(req: NextRequest) {
     const openai = getOpenAI();
     const t = tone || "casual";
 
+    // Pro/Agency get gpt-4o (better quality), Free/Starter get gpt-4o-mini
+    const model = hasFeature(profile.plan, "pro") ? "gpt-4o" : "gpt-4o-mini";
+
     const [result1, result2, result3] = await Promise.all([
       openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model,
         messages: [
           { role: "system", content: SYSTEM_MSG },
           { role: "user", content: buildPromptBatch1(safeTranscript, title, t) },
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
         response_format: { type: "json_object" },
       }),
       openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model,
         messages: [
           { role: "system", content: SYSTEM_MSG },
           { role: "user", content: buildPromptBatch2(safeTranscript, title, t) },
@@ -95,7 +99,7 @@ export async function POST(req: NextRequest) {
         response_format: { type: "json_object" },
       }),
       openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model,
         messages: [
           { role: "system", content: SYSTEM_MSG },
           { role: "user", content: buildPromptBatch3(safeTranscript, title, t) },

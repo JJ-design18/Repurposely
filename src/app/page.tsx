@@ -31,7 +31,7 @@ const plans = [
     price: "$0",
     period: "forever",
     generations: "3 videos/month",
-    features: ["3 generations/month", "All 7 platforms", "Casual tone only", "Basic support"],
+    features: ["3 generations/month", "All 7 platforms", "Standard AI quality", "Casual tone only"],
     cta: "Start Free",
     highlighted: false,
   },
@@ -43,6 +43,7 @@ const plans = [
     features: [
       "25 generations/month",
       "All 7 platforms",
+      "Standard AI quality",
       "5 custom tones",
       "Generation history",
       "Priority support",
@@ -58,6 +59,7 @@ const plans = [
     features: [
       "100 generations/month",
       "All 7 platforms",
+      "Premium AI quality (GPT-4o)",
       "5 custom tones",
       "Generation history",
       "Production Kit (voiceover + storyboard)",
@@ -74,6 +76,7 @@ const plans = [
     features: [
       "500 generations/month",
       "Everything in Pro",
+      "Premium AI quality (GPT-4o)",
       "Dedicated support",
     ],
     cta: "Scale Up",
