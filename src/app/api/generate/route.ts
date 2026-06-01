@@ -54,12 +54,27 @@ export async function POST(req: NextRequest) {
     const supabase = await createSupabaseServer();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan, generations_used")
+      .select("plan, generations_used, generations_reset_at")
       .eq("id", user.id)
       .single();
 
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    // Monthly quota reset (check-on-read — no cron required).
+    // If the billing period has elapsed, zero the counter and roll the window forward.
+    if (
+      !profile.generations_reset_at ||
+      new Date(profile.generations_reset_at) <= new Date()
+    ) {
+      const nextReset = new Date();
+      nextReset.setMonth(nextReset.getMonth() + 1);
+      await supabase
+        .from("profiles")
+        .update({ generations_used: 0, generations_reset_at: nextReset.toISOString() })
+        .eq("id", user.id);
+      profile.generations_used = 0;
     }
 
     const limit = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.free;

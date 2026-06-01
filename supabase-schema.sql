@@ -7,6 +7,7 @@ create table public.profiles (
   email text not null,
   plan text not null default 'free' check (plan in ('free', 'starter', 'pro', 'agency')),
   generations_used integer not null default 0,
+  generations_reset_at timestamp with time zone not null default timezone('utc'::text, now() + interval '1 month'),
   stripe_customer_id text,
   stripe_subscription_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -50,6 +51,10 @@ create policy "Users can update own projects"
   on public.projects for update
   using (auth.uid() = user_id);
 
+create policy "Users can delete own projects"
+  on public.projects for delete
+  using (auth.uid() = user_id);
+
 -- Auto-create profile on signup
 create or replace function public.handle_new_user()
 returns trigger as $$
@@ -67,3 +72,19 @@ create trigger on_auth_user_created
 -- Indexes
 create index projects_user_id_idx on public.projects(user_id);
 create index projects_created_at_idx on public.projects(created_at desc);
+
+-- =====================================================================
+-- MIGRATION (2026-06-01): run this block on the EXISTING production DB.
+-- Idempotent — safe to re-run.
+-- =====================================================================
+
+-- Fix #1: monthly quota reset support
+alter table public.profiles
+  add column if not exists generations_reset_at timestamp with time zone
+  not null default timezone('utc'::text, now() + interval '1 month');
+
+-- Fix #2: allow users to delete their own projects (was silently rejected by RLS)
+drop policy if exists "Users can delete own projects" on public.projects;
+create policy "Users can delete own projects"
+  on public.projects for delete
+  using (auth.uid() = user_id);

@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
         const priceId = subscription.items.data[0]?.price.id;
         const plan = PLAN_MAP[priceId] || "free";
 
+        const nextReset = new Date();
+        nextReset.setMonth(nextReset.getMonth() + 1);
+
         const { error } = await supabase
           .from("profiles")
           .update({
@@ -71,6 +74,7 @@ export async function POST(req: NextRequest) {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             generations_used: 0,
+            generations_reset_at: nextReset.toISOString(),
           })
           .eq("id", userId);
 

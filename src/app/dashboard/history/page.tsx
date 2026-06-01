@@ -40,37 +40,38 @@ export default function HistoryPage() {
   const [userPlan, setUserPlan] = useState<string | null>(null);
 
   useEffect(() => {
-    loadProjects();
-  }, []);
-
-  async function loadProjects() {
     const supabase = createSupabaseBrowser();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return;
-    const user = session.user;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      const user = session.user;
 
-    // Check plan
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("plan")
-      .eq("id", user.id)
-      .single();
-    setUserPlan(profile?.plan || "free");
+      // Check plan
+      supabase
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single()
+        .then(({ data: profile }) => {
+          const plan = profile?.plan || "free";
+          setUserPlan(plan);
 
-    if (!canViewHistory(profile?.plan || "free")) {
-      setLoading(false);
-      return;
-    }
+          if (!canViewHistory(plan)) {
+            setLoading(false);
+            return;
+          }
 
-    const { data } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setProjects((data || []) as Project[]);
-    setLoading(false);
-  }
+          supabase
+            .from("projects")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .then(({ data }) => {
+              setProjects((data || []) as Project[]);
+              setLoading(false);
+            });
+        });
+    });
+  }, []);
 
   async function deleteProject(id: string) {
     const supabase = createSupabaseBrowser();
